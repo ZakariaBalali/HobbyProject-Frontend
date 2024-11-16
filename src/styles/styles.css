@@ -1,0 +1,30 @@
+.container {
+    max-width: 800px;
+    margin: auto;
+    background: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    line-height: 1.6;
+    display: flex;
+    flex-direction: column;
+    gap: 1px; /* Reduced space between sections */
+    position: relative; /* Allow children to be positioned relative to this container */
+}
+
+
+
+.menu-btn {
+    position: fixed; /* Fixed position for the button */
+    top: 10px; /* Position from the top */
+    left: 10px; /* Position from the left */
+    background: none;
+    border: none;
+    font-size: 30px; /* Adjust size as needed */
+    cursor: pointer;
+    color: #333; /* Adjust color as needed */
+    z-index: 999; /* Make sure it is above the sidebar */
+    margin: 0; /* Remove margin */
+}

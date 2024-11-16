@@ -1,0 +1,45 @@
+/* Sidebar.css */
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: -250px; /* Hide the sidebar off-screen */
+    width: 250px;
+    height: 100%;
+    background: #fff;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.5);
+    transition: left 0.3s ease;
+    z-index: 1000; /* Ensure it's above other content */
+}
+
+.sidebar.open {
+    left: 0; /* Show the sidebar */
+}
+
+.sidebar h2 {
+    padding: 20px;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+}
+
+.sidebar ul li {
+    padding: 15px 20px;
+    cursor: pointer;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
+    padding: 10px 20px;
+}
+
+.language-switcher {
+    position: absolute;
+    bottom: 20px; /* Adjust spacing from bottom */
+    left: 20px; /* Adjust spacing from left */
+}

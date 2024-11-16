@@ -1,0 +1,15 @@
+/* index.css */
+body {
+    background-color: #f4f4f4; /* Light gray background */
+    background-image: url('../../public/images/background.jpg'); /* Reference the local image */
+    background-size: cover; /* Ensure the image covers the entire page */
+    background-position: center; /* Position the image at the center */
+    background-repeat: no-repeat; /* Don't repeat the image */
+    margin: 0; /* Remove default margin */
+    font-family: Arial, sans-serif; /* Set a global font */
+    color: #333; /* Set a default text color */
+}
+
+* {
+    box-sizing: border-box; /* Ensure consistent padding and margin across all elements */
+}
