@@ -8,11 +8,20 @@ import {
     ListItemSecondaryAction,
     Divider,
     Avatar,
-    ListItemAvatar, DialogActions, Dialog, DialogTitle, DialogContent
+    ListItemAvatar,
+    DialogActions,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    Typography,
+    AccordionDetails,
+    AccordionSummary,
+    Accordion
 } from '@mui/material';
 import { Add as AddIcon, Share as ShareIcon } from '@mui/icons-material';
 import '../styles/Sidebar.css'; // Import the CSS for styling the sidebar
 import Sidebar from '../components/Sidebar'; // Import the Sidebar component
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const Playground = () => {
     const [groceries, setGroceries] = useState([]);
@@ -54,6 +63,17 @@ const Playground = () => {
             .catch(error => setError(`Failed to load groceries, ${error}`));
         console.log(itemList)
     }, []);
+
+    const groupBy = (items, key) =>
+        items.reduce((result, item) => {
+            (result[item[key]] = result[item[key]] || []).push(item);
+            return result;
+        }, {});
+
+    const calculateTotalPrice = (items) =>
+        items.reduce((total, item) => total + parseFloat(item.price), 0);
+
+    const groceriesByUsername = groupBy(groceries, 'username');
 
     const handleSearchChange = (e) => {
         setItemInfo({});
@@ -256,22 +276,6 @@ const Playground = () => {
         if (isLoggedIn) fetchGroceries();
     }, [isLoggedIn]);
 
-    // Assuming groceries have 'supermarket' and 'price' properties
-    const groupBySupermarket = (groceries) => {
-        return groceries.reduce((acc, grocery) => {
-            if (!acc[grocery.supermarket]) {
-                acc[grocery.supermarket] = [];
-            }
-            acc[grocery.supermarket].push(grocery);
-            return acc;
-        }, {});
-    };
-
-    const calculateTotalPrice = (items) => {
-        return items.reduce((total, item) => total + parseFloat(item.price), 0);
-    };
-
-
     const handleShareList = async () => {
         if (shareUsername.trim()) {
             const token = localStorage.getItem('access_token');
@@ -443,35 +447,53 @@ const Playground = () => {
                         <p>Add items to list</p>
                     ) : (
                         <>
-                            {Object.keys(groupBySupermarket(groceries)).map((supermarket) => {
-                                const items = groupBySupermarket(groceries)[supermarket];
-                                const totalPrice = calculateTotalPrice(items);
+                            {Object.keys(groceriesByUsername).map((username) => {
+                                const userGroceries = groceriesByUsername[username];
+                                const groceriesBySupermarket = groupBy(userGroceries, 'supermarket');
+
                                 return (
-                                    <React.Fragment key={supermarket}>
-                                        <div>
-                                            <h2>{supermarket}</h2>
-                                            <List>
-                                                {items.map((grocery) => (
-                                                    <ListItem key={grocery.id}>
-                                                        <ListItemText
-                                                            primary={grocery.name}
-                                                            secondary={`${grocery.supermarket} ${grocery.price}`}
-                                                        />
-                                                        <ListItemSecondaryAction>
-                                                            <Button
-                                                                onClick={() => deleteGrocery(grocery.name)}
-                                                                color="secondary"
-                                                            >
-                                                                Delete
-                                                            </Button>
-                                                        </ListItemSecondaryAction>
-                                                    </ListItem>
-                                                ))}
-                                            </List>
-                                            <h3>Total Price: {totalPrice.toFixed(2)}</h3>
-                                        </div>
-                                        <Divider />
-                                    </React.Fragment>
+                                    <Accordion key={username}>
+                                        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                                            <Typography variant="h6">{username}&#39;s Groceries</Typography>
+                                        </AccordionSummary>
+                                        <AccordionDetails>
+                                            <div>
+                                                {Object.keys(groceriesBySupermarket).map((supermarket) => {
+                                                    const items = groceriesBySupermarket[supermarket];
+                                                    const totalPrice = calculateTotalPrice(items);
+                                                    return (
+                                                        <React.Fragment key={supermarket}>
+                                                            <div>
+                                                                <Typography variant="h6">{supermarket}</Typography>
+                                                                <List>
+                                                                    {items.map((grocery) => (
+                                                                        <ListItem key={grocery.id}>
+                                                                            <ListItemText
+                                                                                primary={grocery.name}
+                                                                                secondary={`${grocery.supermarket} - $${grocery.price}`}
+                                                                            />
+                                                                            <ListItemSecondaryAction>
+                                                                                <Button
+                                                                                    onClick={() => deleteGrocery(grocery.name)}
+                                                                                    color="secondary"
+                                                                                >
+                                                                                    Delete
+                                                                                </Button>
+                                                                            </ListItemSecondaryAction>
+                                                                        </ListItem>
+                                                                    ))}
+                                                                </List>
+                                                                <Typography variant="subtitle1">
+                                                                    Total Price: ${totalPrice.toFixed(2)}
+                                                                </Typography>
+                                                            </div>
+                                                            <Divider />
+                                                        </React.Fragment>
+                                                    );
+                                                })}
+                                            </div>
+                                        </AccordionDetails>
+                                    </Accordion>
                                 );
                             })}
                         </>
