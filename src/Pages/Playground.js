@@ -1,5 +1,15 @@
 import React, {useEffect, useState} from 'react';
-import {TextField, Button, List, ListItem, ListItemText, ListItemSecondaryAction} from '@mui/material';
+import {
+    TextField,
+    Button,
+    List,
+    ListItem,
+    ListItemText,
+    ListItemSecondaryAction,
+    Divider,
+    Avatar,
+    ListItemAvatar
+} from '@mui/material';
 import '../styles/Sidebar.css'; // Import the CSS for styling the sidebar
 import Sidebar from '../components/Sidebar'; // Import the Sidebar component
 
@@ -84,6 +94,7 @@ const Playground = () => {
 
 
     const handleLogout = () => {
+        setFilteredSuggestions([]);
         localStorage.removeItem('access_token'); // Remove the token
         setIsLoggedIn(false); // Update the login state
         setGroceries([]); // Clear the groceries list
@@ -92,6 +103,8 @@ const Playground = () => {
 
     // Function to handle login
     const handleLogin = async () => {
+        setFilteredSuggestions([]);
+        setSearchQuery("");
         if (!username || !password) {
             setLoginError('Please enter both username and password.');
             return;
@@ -238,6 +251,21 @@ const Playground = () => {
         if (isLoggedIn) fetchGroceries();
     }, [isLoggedIn]);
 
+    // Assuming groceries have 'supermarket' and 'price' properties
+    const groupBySupermarket = (groceries) => {
+        return groceries.reduce((acc, grocery) => {
+            if (!acc[grocery.supermarket]) {
+                acc[grocery.supermarket] = [];
+            }
+            acc[grocery.supermarket].push(grocery);
+            return acc;
+        }, {});
+    };
+
+    const calculateTotalPrice = (items) => {
+        return items.reduce((total, item) => total + parseFloat(item.price), 0);
+    };
+
     return (
         <div className="container">
             <button className="menu-btn" onClick={toggleSidebar}>
@@ -338,6 +366,16 @@ const Playground = () => {
                         <List>
                             {filteredSuggestions.map((suggestion, index) => (
                                 <ListItem key={index} button onClick={() => handleSuggestionClick(suggestion)}>
+                                    <ListItemAvatar>
+                                        <Avatar
+                                            alt={suggestion.supermarket}
+                                            src={`/images/${suggestion.supermarket}.png`}
+                                            sx={{
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: 0, // Remove the circular clipping
+                                            }}                                        />
+                                    </ListItemAvatar>
                                     <ListItemText
                                         primary={suggestion.productName}
                                         secondary={`${suggestion.supermarket} ${suggestion.price}`}
@@ -345,28 +383,46 @@ const Playground = () => {
                                 </ListItem>
                             ))}
                         </List>
+
                     )}
 
-                    {error && <div className="error-message" style={{ color: 'red' }}>{error}</div>}
+                    {error && <div className="error-message" style={{color: 'red'}}>{error}</div>}
 
                     {groceries.length === 0 ? (
                         <p>Add items to list</p>
                     ) : (
-                        <List>
-                            {groceries.map((grocery) => (
-                                <ListItem key={grocery.id}>
-                                    <ListItemText primary={grocery.name}/>
-                                    <ListItemSecondaryAction>
-                                        <Button
-                                            onClick={() => deleteGrocery(grocery.name)}
-                                            color="secondary"
-                                        >
-                                            Delete
-                                        </Button>
-                                    </ListItemSecondaryAction>
-                                </ListItem>
-                            ))}
-                        </List>
+                        <>
+                            {Object.keys(groupBySupermarket(groceries)).map((supermarket) => {
+                                const items = groupBySupermarket(groceries)[supermarket];
+                                const totalPrice = calculateTotalPrice(items);
+                                return (
+                                    <>
+                                        <div key={supermarket}>
+                                            <h2>{supermarket}</h2>
+                                            <List>
+                                                {items.map((grocery) => (
+                                                    <ListItem key={grocery.id}>
+                                                        <ListItemText primary={grocery.name}
+                                                                      secondary={`${grocery.supermarket} ${grocery.price}`}/>
+                                                        <ListItemSecondaryAction>
+                                                            <Button
+                                                                onClick={() => deleteGrocery(grocery.name)}
+                                                                color="secondary"
+                                                            >
+                                                                Delete
+                                                            </Button>
+                                                        </ListItemSecondaryAction>
+                                                    </ListItem>
+                                                ))}
+                                            </List>
+                                            <h3>Total
+                                                Price: {totalPrice.toFixed(2)}</h3> {/* Show total price for this supermarket */}
+                                        </div>
+                                        <Divider/>
+                                    </>
+                                );
+                            })}
+                        </>
                     )}
 
                     <Button
