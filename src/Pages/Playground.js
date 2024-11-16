@@ -8,8 +8,9 @@ import {
     ListItemSecondaryAction,
     Divider,
     Avatar,
-    ListItemAvatar
+    ListItemAvatar, DialogActions, Dialog, DialogTitle, DialogContent
 } from '@mui/material';
+import { Add as AddIcon, Share as ShareIcon } from '@mui/icons-material';
 import '../styles/Sidebar.css'; // Import the CSS for styling the sidebar
 import Sidebar from '../components/Sidebar'; // Import the Sidebar component
 
@@ -30,6 +31,9 @@ const Playground = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredSuggestions, setFilteredSuggestions] = useState([]);
     const [itemInfo, setItemInfo] = useState({});
+    const [openDialog, setOpenDialog] = useState(false);
+    const [shareUsername, setShareUsername] = useState('');
+    const [shareError, setShareError] = useState('');
     // Function to toggle the sidebar
     const toggleSidebar = () => {
         setIsOpen(!isOpen);
@@ -119,6 +123,7 @@ const Playground = () => {
 
             if (response.ok) {
                 const data = await response.json();
+                localStorage.setItem('username', username);
                 localStorage.setItem('access_token', data.token); // Store the token
                 setIsLoggedIn(true);
                 setLoginError('');
@@ -187,17 +192,17 @@ const Playground = () => {
     // Function to handle adding a new grocery item
     const addGrocery = async () => {
         setFilteredSuggestions([]);
+        const token = localStorage.getItem('access_token');
         console.log(itemList, itemInfo)
         if (!newItem) return;
 
         let newGrocery = {};
         if (itemInfo && Object.keys(itemInfo).length > 0) {
-            newGrocery = {name: itemInfo.productName, Price: itemInfo.price, Supermarket: itemInfo.supermarket};
+            newGrocery = {name: itemInfo.productName, Price: itemInfo.price, Supermarket: itemInfo.supermarket, username: token};
 
         } else {
             newGrocery = {name: newItem};
         }
-        const token = localStorage.getItem('access_token');
 
         try {
             const response = await fetch('https://localhost:7102/groceries', {
@@ -266,13 +271,45 @@ const Playground = () => {
         return items.reduce((total, item) => total + parseFloat(item.price), 0);
     };
 
+
+    const handleShareList = async () => {
+        if (shareUsername.trim()) {
+            const token = localStorage.getItem('access_token');
+            try {
+                const response = await fetch('https://localhost:7102/groceries/sharegrocerylist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify({
+                        usernames: [shareUsername], // Passing an array of usernames to share with
+                    }),
+                });
+
+                if (response.ok) {
+                    console.log(`List successfully shared with ${shareUsername}`);
+                    setOpenDialog(false); // Close the dialog after sharing
+                } else {
+                    const errorData = await response.json();
+                    setShareError(errorData.message || 'Error sharing list.');
+                }
+            } catch (error) {
+                console.error('Error sharing grocery list:', error);
+                setShareError('Failed to share list.');
+            }
+        } else {
+            setShareError('Please enter a valid username');
+        }
+    };
+
+
     return (
         <div className="container">
             <button className="menu-btn" onClick={toggleSidebar}>
                 &#9776;
             </button>
-            <Sidebar isOpen={isOpen} onClose={toggleSidebar} onLanguageChange={() => {
-            }}/>
+            <Sidebar isOpen={isOpen} onClose={toggleSidebar} onLanguageChange={() => {}} />
 
             {/* Show login or register screen based on the current state */}
             {!isLoggedIn && !isRegistering ? (
@@ -293,13 +330,13 @@ const Playground = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         fullWidth
-                        style={{marginTop: '10px'}}
+                        style={{ marginTop: '10px' }}
                     />
                     <Button
                         variant="contained"
                         color="primary"
                         onClick={handleLogin}
-                        style={{marginTop: '10px'}}
+                        style={{ marginTop: '10px' }}
                     >
                         Login
                     </Button>
@@ -307,7 +344,7 @@ const Playground = () => {
                         variant="text"
                         color="primary"
                         onClick={() => setIsRegistering(true)} // Switch to register form
-                        style={{marginTop: '10px'}}
+                        style={{ marginTop: '10px' }}
                     >
                         Register
                     </Button>
@@ -330,13 +367,13 @@ const Playground = () => {
                         value={registerPassword}
                         onChange={(e) => setRegisterPassword(e.target.value)}
                         fullWidth
-                        style={{marginTop: '10px'}}
+                        style={{ marginTop: '10px' }}
                     />
                     <Button
                         variant="contained"
                         color="primary"
                         onClick={handleRegister}
-                        style={{marginTop: '10px'}}
+                        style={{ marginTop: '10px' }}
                     >
                         Register
                     </Button>
@@ -344,15 +381,31 @@ const Playground = () => {
                         variant="text"
                         color="primary"
                         onClick={() => setIsRegistering(false)} // Switch back to login form
-                        style={{marginTop: '10px'}}
+                        style={{ marginTop: '10px' }}
                     >
                         Back to Login
                     </Button>
                 </div>
             ) : (
                 <div className="playground-section">
-                    <h1>Groceries</h1>
-
+                    <div
+                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}
+                    >
+                        <h1>Groceries</h1>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                        <span style={{ marginRight: '10px' }}>
+                            Logged in as: {localStorage.getItem('username')}
+                        </span>
+                            <Button
+                                variant="contained"
+                                color="secondary"
+                                onClick={handleLogout}
+                                style={{ marginTop: '10px' }}
+                            >
+                                Logout
+                            </Button>
+                        </div>
+                    </div>
                     <TextField
                         label="Search Products"
                         variant="outlined"
@@ -360,8 +413,6 @@ const Playground = () => {
                         onChange={handleSearchChange}
                         fullWidth
                     />
-
-                    {/* Display filtered suggestions */}
                     {filteredSuggestions.length > 0 && (
                         <List>
                             {filteredSuggestions.map((suggestion, index) => (
@@ -373,8 +424,9 @@ const Playground = () => {
                                             sx={{
                                                 width: 40,
                                                 height: 40,
-                                                borderRadius: 0, // Remove the circular clipping
-                                            }}                                        />
+                                                borderRadius: 0,
+                                            }}
+                                        />
                                     </ListItemAvatar>
                                     <ListItemText
                                         primary={suggestion.productName}
@@ -383,10 +435,9 @@ const Playground = () => {
                                 </ListItem>
                             ))}
                         </List>
-
                     )}
 
-                    {error && <div className="error-message" style={{color: 'red'}}>{error}</div>}
+                    {error && <div className="error-message" style={{ color: 'red' }}>{error}</div>}
 
                     {groceries.length === 0 ? (
                         <p>Add items to list</p>
@@ -396,14 +447,16 @@ const Playground = () => {
                                 const items = groupBySupermarket(groceries)[supermarket];
                                 const totalPrice = calculateTotalPrice(items);
                                 return (
-                                    <>
-                                        <div key={supermarket}>
+                                    <React.Fragment key={supermarket}>
+                                        <div>
                                             <h2>{supermarket}</h2>
                                             <List>
                                                 {items.map((grocery) => (
                                                     <ListItem key={grocery.id}>
-                                                        <ListItemText primary={grocery.name}
-                                                                      secondary={`${grocery.supermarket} ${grocery.price}`}/>
+                                                        <ListItemText
+                                                            primary={grocery.name}
+                                                            secondary={`${grocery.supermarket} ${grocery.price}`}
+                                                        />
                                                         <ListItemSecondaryAction>
                                                             <Button
                                                                 onClick={() => deleteGrocery(grocery.name)}
@@ -415,36 +468,60 @@ const Playground = () => {
                                                     </ListItem>
                                                 ))}
                                             </List>
-                                            <h3>Total
-                                                Price: {totalPrice.toFixed(2)}</h3> {/* Show total price for this supermarket */}
+                                            <h3>Total Price: {totalPrice.toFixed(2)}</h3>
                                         </div>
-                                        <Divider/>
-                                    </>
+                                        <Divider />
+                                    </React.Fragment>
                                 );
                             })}
                         </>
                     )}
 
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={addGrocery}
-                        style={{marginTop: '10px'}}
-                    >
-                        Add Item
-                    </Button>
-
-                    {/* Logout button */}
-                    <Button
-                        variant="contained"
-                        color="secondary"
-                        onClick={handleLogout}
-                        style={{marginTop: '10px'}}
-                    >
-                        Logout
-                    </Button>
+                    <div style={{ position: 'fixed', bottom: '20px', right: '20px' }}>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={addGrocery}
+                            sx={{
+                                marginRight: '5px',
+                            }}
+                        >
+                            <AddIcon sx={{ marginRight: '5px' }} /> Add Item
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => setOpenDialog(true)}
+                        >
+                            <ShareIcon sx={{ marginRight: '5px' }} /> Share List
+                        </Button>
+                    </div>
                 </div>
             )}
+
+            {/* Share List Dialog */}
+            <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+                <DialogTitle>Share Your List</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        label="Enter Username"
+                        variant="outlined"
+                        value={shareUsername}
+                        onChange={(e) => setShareUsername(e.target.value)}
+                        fullWidth
+                        error={!!shareError}
+                        helperText={shareError}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setOpenDialog(false)} color="secondary">
+                        Cancel
+                    </Button>
+                    <Button onClick={handleShareList} color="primary">
+                        Share
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </div>
     );
 };
