@@ -3,9 +3,9 @@
 const personalInfo = (language) => ({
     name: "Zakaria Balali",
     jobTitle: language === 'en' ? "Software Engineer" : "Software Ingenieur",
-    location: language === 'en' ? "Hilversum, Netherlands" : "Hilversum, Nederland",
-    email: "Zakariabalali_7@hotmail.com",
-    phone: "(+31) 0659117141",
+    location: language === 'en' ? "Netherlands" : "Nederland",
+    email: "test@test.nl,
+    phone: "(+31) 0612345678",
 });
 
 const experiences = (language) => [
